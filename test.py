@@ -24,7 +24,7 @@ import imgproc
 import file_utils
 import json
 import zipfile
-
+from pathlib import Path
 from craft import CRAFT
 
 from collections import OrderedDict
@@ -55,16 +55,24 @@ parser.add_argument('--show_time', default=False, action='store_true', help='sho
 parser.add_argument('--test_folder', default='/data/', type=str, help='folder path to input images')
 parser.add_argument('--refine', default=False, action='store_true', help='enable link refiner')
 parser.add_argument('--refiner_model', default='weights/craft_refiner_CTW1500.pth', type=str, help='pretrained refiner model')
+parser.add_argument('--result_folder', default=None, type=str, help='folder path to results')
+parser.add_argument('--render', default=False, type=bool, help='output images with bounding boxes')
 
 args = parser.parse_args()
 
 
 """ For test images in a folder """
 image_list, _, _ = file_utils.get_files(args.test_folder)
-
-result_folder = './result/'
-if not os.path.isdir(result_folder):
-    os.mkdir(result_folder)
+result_folder = args.result_folder + "/"
+if not result_folder:
+    result_folder = './result/'
+    if not os.path.isdir(result_folder):
+        os.mkdir(result_folder)
+else:
+    if not os.path.isdir(args.result_folder):
+        print("Specified result folder does not exit.")
+        print("Created a folder:", Path(args.result_folder))
+        os.mkdir(result_folder)
 
 def test_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, refine_net=None):
     t0 = time.time()
@@ -107,9 +115,11 @@ def test_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, r
     t1 = time.time() - t1
 
     # render results (optional)
-    render_img = score_text.copy()
-    render_img = np.hstack((render_img, score_link))
-    ret_score_text = imgproc.cvt2HeatmapImg(render_img)
+    ret_score_text = None
+    if args.render:
+        render_img = score_text.copy()
+        render_img = np.hstack((render_img, score_link))
+        ret_score_text = imgproc.cvt2HeatmapImg(render_img)
 
     if args.show_time : print("\ninfer/postproc time : {:.3f}/{:.3f}".format(t0, t1))
 
@@ -162,7 +172,8 @@ if __name__ == '__main__':
         # save score text
         filename, file_ext = os.path.splitext(os.path.basename(image_path))
         mask_file = result_folder + "/res_" + filename + '_mask.jpg'
-        cv2.imwrite(mask_file, score_text)
+        if args.render:
+            cv2.imwrite(mask_file, score_text)
 
         file_utils.saveResult(image_path, image[:,:,::-1], polys, dirname=result_folder)
 
