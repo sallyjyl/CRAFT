@@ -3,6 +3,12 @@ import os
 import numpy as np
 import cv2
 import imgproc
+import sys
+from pathlib import Path
+# sys.path.append(os.getcwd() + "../ocr/")
+from crop_textbox import cropImage
+# from crop_textbox import *
+# from ../ocr/crop_textbox import *
 
 # borrowed from https://github.com/lengstrom/fast-style-transfer/blob/master/src/utils.py
 def get_files(img_dir):
@@ -71,6 +77,7 @@ def saveResult(img_file, img, boxes, dirname='./result/', verticals=None, texts=
                     cv2.putText(img, "{}".format(texts[i]), (poly[0][0]+1, poly[0][1]+1), font, font_scale, (0, 0, 0), thickness=1)
                     cv2.putText(img, "{}".format(texts[i]), tuple(poly[0]), font, font_scale, (0, 255, 255), thickness=1)
 
+        cropImage(img_file, res_file, dirname)
         # Save result image
         cv2.imwrite(res_img_file, img)
 
