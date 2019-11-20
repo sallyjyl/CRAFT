@@ -59,6 +59,8 @@ def saveResult(img_file, img, boxes, dirname='./result/', verticals=None, texts=
             os.mkdir(dirname)
 
         with open(res_file, 'w') as f:
+            #Make sure that the output bounding boxes are in order
+            boxes = sorted(boxes, key=lambda x: x[0][0])
             for i, box in enumerate(boxes):
                 poly = np.array(box).astype(np.int32).reshape((-1))
                 strResult = ','.join([str(p) for p in poly]) + '\r\n'
